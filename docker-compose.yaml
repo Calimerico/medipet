@@ -1,0 +1,91 @@
+version: "2"
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    volumes:
+      - /opt/postgresql:/var/lib/postgresql/data:rw
+    ports:
+      - "5432:5432"
+    networks:
+      - medipet-network
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: eventify
+  camunda:
+    container_name: camunda
+    image: camunda/camunda-bpm-platform:latest
+    ports:
+      - "8081:8080"
+    networks:
+      - medipet-network
+    environment:
+      WAIT_FOR: postgres:5432
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/medipet
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: changeme
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - pgadmin:/root/.pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - medipet-network
+    restart: unless-stopped
+
+#  medipet:
+#    container_name: medipet
+#    build:
+#      context: .
+#      dockerfile: medipet.Dockerfile
+#    image: medipet-service
+#    ports:
+#      - "8080:8080"
+#    networks:
+#      - medipet-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.7.0
+    container_name: elasticsearch
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - cluster.initial_master_nodes=es01
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - medipet-network
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.7.0
+    container_name: kibana
+    environment:
+      - "ELASTICSEARCH_URL=http://elasticsearch:9200"
+    ports:
+      - "5601:5601"
+    networks:
+      - medipet-network
+
+networks:
+  medipet-network:
+    driver: bridge
+
+volumes:
+  pgadmin:
+  esdata1:
