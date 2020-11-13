@@ -22,7 +22,6 @@ public class PolicyService {
 
     public PolicyDTO createPolicy() {
         UUID id = UUID.randomUUID();
-        eventRepo.save();//
         DomainEventPublisher.publish(PolicyCreatedDomainEvent.builder().id(id).build());
         return null;
     }
